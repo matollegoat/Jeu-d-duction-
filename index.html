@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Qui a dit quoi ?</title>
+  <style>
+    /* ── Reset & base ─────────────────────────── */
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f0f1a;
+      color: #f0f0f0;
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 20px 20px 40px;
+      min-height: 100vh;
+    }
+
+    /* ── Typographie ──────────────────────────── */
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      text-align: center;
+      margin-bottom: 6px;
+      background: linear-gradient(135deg, #a78bfa, #60a5fa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #c4b5fd;
+    }
+    .subtitle {
+      text-align: center;
+      color: #888;
+      margin-bottom: 32px;
+      font-size: 0.95rem;
+    }
+
+    /* ── Inputs ───────────────────────────────── */
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px; /* ≥16px pour éviter le zoom iPhone */
+      border-radius: 12px;
+      border: 2px solid #2e2e4a;
+      background: #1a1a2e;
+      color: #f0f0f0;
+      outline: none;
+      transition: border-color 0.2s;
+      margin-bottom: 0;
+    }
+    input:focus { border-color: #7c3aed; }
+    input::placeholder { color: #555; }
+
+    /* ── Boutons ──────────────────────────────── */
+    button {
+      width: 100%;
+      padding: 16px;
+      font-size: 18px;
+      font-weight: 700;
+      border-radius: 12px;
+      margin-top: 12px;
+      cursor: pointer;
+      border: none;
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #7c3aed, #2563eb);
+      color: #fff;
+    }
+    .btn-secondary {
+      background: #1e1e35;
+      color: #a78bfa;
+      border: 2px solid #2e2e4a;
+    }
+    .btn-danger {
+      background: #3b1a1a;
+      color: #f87171;
+      border: 2px solid #4a2020;
+    }
+    .btn-success {
+      background: linear-gradient(135deg, #059669, #0284c7);
+      color: #fff;
+    }
+
+    /* ── Cards / sections ─────────────────────── */
+    .card {
+      background: #1a1a2e;
+      border: 1px solid #2e2e4a;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .divider {
+      text-align: center;
+      color: #444;
+      margin: 20px 0;
+      font-size: 0.85rem;
+      position: relative;
+    }
+    .divider::before, .divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: #2e2e4a;
+    }
+    .divider::before { left: 0; }
+    .divider::after { right: 0; }
+
+    /* ── Message d'erreur ─────────────────────── */
+    #error-banner {
+      display: none;
+      background: #3b1a1a;
+      border: 1px solid #7f1d1d;
+      color: #fca5a5;
+      padding: 12px 16px;
+      border-radius: 10px;
+      margin-bottom: 16px;
+      font-size: 0.9rem;
+    }
+
+    /* ── Code de room ─────────────────────────── */
+    .room-code-display {
+      font-size: 3.5rem;
+      font-weight: 900;
+      text-align: center;
+      letter-spacing: 0.2em;
+      color: #a78bfa;
+      background: #12122a;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 8px;
+    }
+    .room-code-hint {
+      text-align: center;
+      color: #555;
+      font-size: 0.8rem;
+      margin-bottom: 4px;
+    }
+
+    /* ── Liste des joueurs ────────────────────── */
+    .players-list {
+      list-style: none;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .players-list li {
+      background: #252540;
+      border: 1px solid #3a3a60;
+      border-radius: 20px;
+      padding: 6px 14px;
+      font-size: 0.9rem;
+      color: #c4b5fd;
+    }
+    .players-list li.host::after {
+      content: ' 👑';
+    }
+
+    /* ── Question affichée ───────────────────── */
+    .question-display {
+      background: linear-gradient(135deg, #1e1040, #0f1a40);
+      border: 1px solid #3730a3;
+      border-radius: 16px;
+      padding: 20px;
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-align: center;
+      color: #e0d7ff;
+      margin-bottom: 20px;
+      line-height: 1.4;
+    }
+
+    /* ── Progression des réponses ─────────────── */
+    .progress-info {
+      text-align: center;
+      color: #888;
+      font-size: 1rem;
+      margin-top: 16px;
+    }
+    .progress-bar-wrap {
+      background: #1e1e35;
+      border-radius: 99px;
+      height: 8px;
+      margin-top: 10px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #7c3aed, #2563eb);
+      border-radius: 99px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    /* ── Réponses (résultats) ─────────────────── */
+    .answers-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .answers-list li {
+      background: #1e1e35;
+      border: 1px solid #3a3a60;
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 1.05rem;
+      color: #e0d7ff;
+      position: relative;
+      padding-left: 44px;
+    }
+    .answers-list li::before {
+      content: attr(data-num);
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 900;
+      color: #7c3aed;
+      font-size: 1.1rem;
+    }
+
+    /* ── Waiting message ──────────────────────── */
+    .waiting-msg {
+      text-align: center;
+      color: #666;
+      font-size: 0.95rem;
+      margin-top: 20px;
+      padding: 20px;
+      border: 1px dashed #2e2e4a;
+      border-radius: 12px;
+    }
+    .waiting-msg span {
+      display: block;
+      font-size: 2rem;
+      margin-bottom: 8px;
+    }
+
+    /* ── Vues (SPA) ───────────────────────────── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Logo / header ────────────────────────── */
+    .app-header {
+      text-align: center;
+      margin-bottom: 32px;
+      padding-top: 20px;
+    }
+    .app-emoji { font-size: 3rem; display: block; margin-bottom: 8px; }
+
+    /* ── Confirmation d'envoi ─────────────────── */
+    .sent-confirmation {
+      display: none;
+      text-align: center;
+      color: #34d399;
+      font-size: 1rem;
+      padding: 16px;
+      background: #052e16;
+      border: 1px solid #065f46;
+      border-radius: 12px;
+      margin-top: 12px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- VUE 1 — ACCUEIL                            -->
+<!-- ─────────────────────────────────────────── -->
+<div id="view-home" class="view active">
+  <div class="app-header">
+    <span class="app-emoji">🕵️</span>
+    <h1>Qui a dit quoi ?</h1>
+    <p class="subtitle">Le jeu de déduction entre amis</p>
+  </div>
+
+  <!-- Bannière d'erreur globale -->
+  <div id="error-banner"></div>
+
+  <div class="card">
+    <h2>Ton prénom</h2>
+    <input
+      type="text"
+      id="input-name"
+      placeholder="Ex : Alice"
+      maxlength="20"
+      autocomplete="off"
+    />
+  </div>
+
+  <button class="btn-primary" onclick="handleCreateRoom()">
+    ✨ Créer une partie
+  </button>
+
+  <div class="divider">ou rejoindre</div>
+
+  <div class="card">
+    <h2>Code de la partie</h2>
+    <input
+      type="text"
+      id="input-code"
+      placeholder="1234"
+      maxlength="4"
+      pattern="\d{4}"
+      inputmode="numeric"
+      autocomplete="off"
+    />
+  </div>
+  <button class="btn-secondary" onclick="handleJoinRoom()">
+    🚀 Rejoindre la partie
+  </button>
+</div>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- VUE 2 — SALLE D'ATTENTE                    -->
+<!-- ─────────────────────────────────────────── -->
+<div id="view-lobby" class="view">
+  <div class="app-header">
+    <h1>Salle d'attente</h1>
+  </div>
+
+  <div class="error-banner-local" id="lobby-error" style="display:none; background:#3b1a1a; border:1px solid #7f1d1d; color:#fca5a5; padding:12px 16px; border-radius:10px; margin-bottom:16px; font-size:0.9rem;"></div>
+
+  <p class="room-code-hint">Code de la partie — partage-le !</p>
+  <div class="room-code-display" id="lobby-code">----</div>
+  <button class="btn-secondary" onclick="copyCode()" style="margin-bottom:20px;">
+    📋 Copier le code
+  </button>
+
+  <div class="card">
+    <h2>Joueurs connectés</h2>
+    <ul class="players-list" id="lobby-players"></ul>
+  </div>
+
+  <!-- Visible seulement pour l'hôte -->
+  <div id="host-start-section">
+    <button class="btn-success" onclick="handleStartGame()">
+      ▶ Lancer la partie
+    </button>
+  </div>
+
+  <!-- Visible pour les autres -->
+  <div id="guest-waiting-section" class="waiting-msg">
+    <span>⏳</span>
+    En attente que l'hôte lance la partie…
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- VUE 3 — PHASE QUESTION                     -->
+<!-- ─────────────────────────────────────────── -->
+<div id="view-question" class="view">
+  <div class="app-header">
+    <h1>La question</h1>
+  </div>
+
+  <!-- Pour l'hôte -->
+  <div id="host-question-section">
+    <div class="card">
+      <h2>Pose ta question</h2>
+      <input
+        type="text"
+        id="input-question"
+        placeholder="Ex : Quel est ton film préféré ?"
+        maxlength="200"
+        autocomplete="off"
+      />
+    </div>
+    <button class="btn-primary" id="btn-send-question" onclick="handleSubmitQuestion()">
+      📨 Envoyer la question
+    </button>
+  </div>
+
+  <!-- Pour les autres joueurs -->
+  <div id="guest-question-section" class="waiting-msg">
+    <span>💬</span>
+    En attente de la question de l'hôte…
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- VUE 4 — PHASE RÉPONSE                      -->
+<!-- ─────────────────────────────────────────── -->
+<div id="view-answer" class="view">
+  <div class="app-header">
+    <h1>Ta réponse</h1>
+  </div>
+
+  <div class="question-display" id="answer-question-display"></div>
+
+  <!-- Zone de saisie (cachée après envoi) -->
+  <div id="answer-input-section">
+    <div class="card">
+      <h2>Ta réponse secrète</h2>
+      <input
+        type="text"
+        id="input-answer"
+        placeholder="Réponds ici…"
+        maxlength="200"
+        autocomplete="off"
+      />
+    </div>
+    <button class="btn-primary" id="btn-send-answer" onclick="handleSubmitAnswer()">
+      ✅ Valider ma réponse
+    </button>
+  </div>
+
+  <!-- Affichée après envoi -->
+  <div class="sent-confirmation" id="answer-sent-msg">
+    ✔ Réponse envoyée !
+  </div>
+
+  <div class="progress-info" id="answer-progress">En attente des autres joueurs…</div>
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-bar"></div>
+  </div>
+</div>
+
+<!-- ─────────────────────────────────────────── -->
+<!-- VUE 5 — RÉSULTATS                          -->
+<!-- ─────────────────────────────────────────── -->
+<div id="view-results" class="view">
+  <div class="app-header">
+    <h1>Les réponses</h1>
+    <p class="subtitle">Débattez — qui a écrit quoi ?</p>
+  </div>
+
+  <div class="question-display" id="results-question-display"></div>
+
+  <ul class="answers-list" id="results-list"></ul>
+
+  <!-- Visible seulement pour l'hôte -->
+  <div id="host-newround-section">
+    <button class="btn-success" onclick="handleNewRound()" style="margin-top:24px;">
+      🔄 Nouvelle manche
+    </button>
+  </div>
+
+  <button class="btn-danger" onclick="handleQuit()" style="margin-top:12px;">
+    🚪 Quitter
+  </button>
+</div>
+
+
+<!-- ─────────────────────────────────────────── -->
+<!-- SCRIPT CLIENT                              -->
+<!-- ─────────────────────────────────────────── -->
+<script src="/socket.io/socket.io.js"></script>
+<script>
+  // ────────────────────────────────────────────
+  // ÉTAT GLOBAL DU CLIENT
+  // ────────────────────────────────────────────
+
+  /** État partagé de l'application côté client */
+  const state = {
+    socket: null,       // Instance Socket.io
+    name: '',           // Prénom du joueur
+    roomCode: '',       // Code de la room actuelle
+    isHost: false,      // Vrai si ce joueur est l'hôte
+    currentQuestion: '' // Question de la manche en cours
+  };
+
+  // ────────────────────────────────────────────
+  // UTILITAIRES UI
+  // ────────────────────────────────────────────
+
+  /**
+   * Affiche une vue et cache toutes les autres.
+   * @param {string} viewId — ex : 'view-lobby'
+   */
+  function showView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+  }
+
+  /**
+   * Affiche un message d'erreur dans la bannière d'erreur globale (vue accueil).
+   * @param {string} msg
+   */
+  function showError(msg) {
+    const banner = document.getElementById('error-banner');
+    banner.textContent = msg;
+    banner.style.display = 'block';
+    setTimeout(() => { banner.style.display = 'none'; }, 5000);
+  }
+
+  /**
+   * Affiche une erreur dans le lobby.
+   * @param {string} msg
+   */
+  function showLobbyError(msg) {
+    const el = document.getElementById('lobby-error');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => { el.style.display = 'none'; }, 5000);
+  }
+
+  /**
+   * Met à jour la liste des joueurs dans le lobby.
+   * @param {Array} players — [{ id, name }]
+   */
+  function renderPlayers(players) {
+    const list = document.getElementById('lobby-players');
+    list.innerHTML = '';
+    players.forEach((p, i) => {
+      const li = document.createElement('li');
+      li.textContent = p.name;
+      // Le premier joueur est l'hôte (ordre d'arrivée)
+      if (i === 0) li.classList.add('host');
+      list.appendChild(li);
+    });
+  }
+
+  /**
+   * Met à jour la barre de progression des réponses.
+   * @param {number} answered
+   * @param {number} total
+   */
+  function updateProgress(answered, total) {
+    document.getElementById('answer-progress').textContent =
+      `⏳ ${answered} / ${total} joueur${total > 1 ? 's' : ''} ont répondu`;
+    const pct = total > 0 ? (answered / total) * 100 : 0;
+    document.getElementById('progress-bar').style.width = pct + '%';
+  }
+
+  // ────────────────────────────────────────────
+  // CONNEXION SOCKET.IO
+  // ────────────────────────────────────────────
+
+  /**
+   * Initialise la connexion Socket.io et enregistre tous les listeners.
+   * Appelé une seule fois au premier besoin (create ou join).
+   */
+  function initSocket() {
+    if (state.socket && state.socket.connected) return;
+
+    state.socket = io();
+
+    // ── Événements reçus du serveur ─────────────
+
+    /** La room a été créée — on passe au lobby */
+    state.socket.on('room-created', ({ code }) => {
+      state.roomCode = code;
+      document.getElementById('lobby-code').textContent = code;
+    });
+
+    /** Confirmation de rejoindre une room */
+    state.socket.on('room-joined', ({ players, state: roomState, isHost, code }) => {
+      if (code) state.roomCode = code;
+      state.isHost = isHost;
+
+      document.getElementById('lobby-code').textContent = state.roomCode;
+      renderPlayers(players);
+
+      // Afficher/cacher les sections hôte vs invité
+      document.getElementById('host-start-section').style.display = isHost ? 'block' : 'none';
+      document.getElementById('guest-waiting-section').style.display = isHost ? 'none' : 'block';
+
+      showView('view-lobby');
+    });
+
+    /** Un joueur a rejoint — mettre à jour la liste */
+    state.socket.on('player-joined', ({ players }) => {
+      renderPlayers(players);
+    });
+
+    /** Un joueur est parti — mettre à jour la liste */
+    state.socket.on('player-left', ({ players }) => {
+      renderPlayers(players);
+    });
+
+    /** La partie est lancée — passer à la phase question */
+    state.socket.on('game-started', () => {
+      // Reset de l'état de réponse pour les nouvelles manches
+      document.getElementById('answer-input-section').style.display = 'block';
+      document.getElementById('answer-sent-msg').style.display = 'none';
+      document.getElementById('btn-send-answer').disabled = false;
+      document.getElementById('input-answer').value = '';
+      document.getElementById('answer-progress').textContent = '';
+      document.getElementById('progress-bar').style.width = '0%';
+      document.getElementById('input-question').value = '';
+
+      // Afficher les sections selon le rôle
+      document.getElementById('host-question-section').style.display = state.isHost ? 'block' : 'none';
+      document.getElementById('guest-question-section').style.display = state.isHost ? 'none' : 'block';
+      document.getElementById('btn-send-question').disabled = false;
+
+      showView('view-question');
+    });
+
+    /** La question est arrivée — passer à la phase de réponse */
+    state.socket.on('question-received', ({ question }) => {
+      state.currentQuestion = question;
+      document.getElementById('answer-question-display').textContent = question;
+      document.getElementById('results-question-display').textContent = question;
+      showView('view-answer');
+    });
+
+    /** Mise à jour de la progression des réponses */
+    state.socket.on('answer-recorded', ({ answeredCount, totalCount }) => {
+      updateProgress(answeredCount, totalCount);
+    });
+
+    /** Affichage des résultats */
+    state.socket.on('show-results', ({ answers }) => {
+      const list = document.getElementById('results-list');
+      list.innerHTML = '';
+      answers.forEach((ans, i) => {
+        const li = document.createElement('li');
+        li.textContent = ans;
+        li.setAttribute('data-num', i + 1);
+        list.appendChild(li);
+      });
+
+      // Bouton "Nouvelle manche" uniquement pour l'hôte
+      document.getElementById('host-newround-section').style.display =
+        state.isHost ? 'block' : 'none';
+
+      showView('view-results');
+    });
+
+    /** Erreur reçue du serveur */
+    state.socket.on('error', ({ message }) => {
+      // Si on est dans le lobby, afficher dans le lobby
+      const currentView = document.querySelector('.view.active');
+      if (currentView && currentView.id === 'view-lobby') {
+        showLobbyError(message);
+      } else {
+        showError(message);
+      }
+
+      // Si l'hôte a quitté, retourner à l'accueil après un court délai
+      if (message.includes("hôte a quitté")) {
+        setTimeout(() => {
+          resetClientState();
+          showView('view-home');
+        }, 3000);
+      }
+    });
+  }
+
+  // ────────────────────────────────────────────
+  // HANDLERS — ACTIONS UTILISATEUR
+  // ────────────────────────────────────────────
+
+  /**
+   * Crée une nouvelle room.
+   */
+  function handleCreateRoom() {
+    const name = document.getElementById('input-name').value.trim();
+    if (!name) {
+      showError('Entrez votre prénom avant de créer une partie.');
+      return;
+    }
+    state.name = name;
+    initSocket();
+    state.socket.emit('create-room', { name });
+  }
+
+  /**
+   * Rejoint une room existante via son code.
+   */
+  function handleJoinRoom() {
+    const name = document.getElementById('input-name').value.trim();
+    const code = document.getElementById('input-code').value.trim();
+
+    if (!name) {
+      showError('Entrez votre prénom avant de rejoindre une partie.');
+      return;
+    }
+    if (!code || !/^\d{4}$/.test(code)) {
+      showError('Le code doit être composé de 4 chiffres.');
+      return;
+    }
+
+    state.name = name;
+    initSocket();
+    state.socket.emit('join-room', { code, name });
+  }
+
+  /**
+   * Lance la partie (hôte uniquement).
+   */
+  function handleStartGame() {
+    state.socket.emit('start-game', { code: state.roomCode });
+  }
+
+  /**
+   * Envoie la question à tous les joueurs (hôte uniquement).
+   */
+  function handleSubmitQuestion() {
+    const question = document.getElementById('input-question').value.trim();
+    if (!question) {
+      showError('La question ne peut pas être vide.');
+      return;
+    }
+    // Désactiver le bouton pour éviter le double-envoi
+    document.getElementById('btn-send-question').disabled = true;
+    state.socket.emit('submit-question', { code: state.roomCode, question });
+  }
+
+  /**
+   * Envoie la réponse du joueur.
+   */
+  function handleSubmitAnswer() {
+    const answer = document.getElementById('input-answer').value.trim();
+    if (!answer) {
+      showError('Ta réponse ne peut pas être vide.');
+      return;
+    }
+    // Désactiver immédiatement le bouton pour empêcher le double-envoi
+    document.getElementById('btn-send-answer').disabled = true;
+
+    // Cacher le champ de saisie, afficher la confirmation
+    document.getElementById('answer-input-section').style.display = 'none';
+    document.getElementById('answer-sent-msg').style.display = 'block';
+
+    state.socket.emit('submit-answer', { code: state.roomCode, answer });
+  }
+
+  /**
+   * Lance une nouvelle manche (hôte uniquement).
+   */
+  function handleNewRound() {
+    state.socket.emit('new-round', { code: state.roomCode });
+  }
+
+  /**
+   * Quitte la partie et retourne à l'accueil.
+   */
+  function handleQuit() {
+    if (state.socket) {
+      state.socket.disconnect();
+      state.socket = null;
+    }
+    resetClientState();
+    showView('view-home');
+  }
+
+  /**
+   * Copie le code de room dans le presse-papier.
+   */
+  function copyCode() {
+    const code = state.roomCode;
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => {
+      const btn = event.currentTarget;
+      const original = btn.textContent;
+      btn.textContent = '✅ Code copié !';
+      setTimeout(() => { btn.textContent = original; }, 2000);
+    }).catch(() => {
+      // Fallback si clipboard non disponible
+      showError('Impossible de copier automatiquement. Code : ' + code);
+    });
+  }
+
+  /**
+   * Remet l'état client à zéro.
+   */
+  function resetClientState() {
+    state.name = '';
+    state.roomCode = '';
+    state.isHost = false;
+    state.currentQuestion = '';
+    document.getElementById('input-name').value = '';
+    document.getElementById('input-code').value = '';
+    document.getElementById('error-banner').style.display = 'none';
+  }
+
+  // ────────────────────────────────────────────
+  // RACCOURCI CLAVIER — Entrée pour valider
+  // ────────────────────────────────────────────
+
+  document.getElementById('input-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleCreateRoom();
+  });
+  document.getElementById('input-code').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleJoinRoom();
+  });
+
+  // ────────────────────────────────────────────
+  // INIT
+  // ────────────────────────────────────────────
+  showView('view-home');
+</script>
+</body>
+</html>
